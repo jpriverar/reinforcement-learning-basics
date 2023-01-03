@@ -70,16 +70,17 @@ class Gridworld(tk.Tk):
         self.terminal = terminals
         self.step_cost = step_cost
 
-        # Updating all widget information
-        self.update()
-        self.main_frame.controls.update_available_actions(self.get_actions(self.current_state()))
-        self.main_frame.board.init(start_position, walls, rewards)
-
         # Setting up the step cost as rewards for all the non declared reward states
         for state in self.get_all_states():
             # If state has not a declared reward, assign the step cost to it
             if state not in self.rewards:
                 self.rewards[state] = self.step_cost
+
+        true_rewards = {key:val for key,val in self.rewards.items() if key in self.terminal}
+        # Updating all widget information
+        self.update()
+        self.main_frame.controls.update_available_actions(self.get_actions(self.current_state()))
+        self.main_frame.board.init(start_position, walls, true_rewards)
 
     def update_frame(self):
         # Update the available moves in the controls
@@ -214,13 +215,15 @@ class Gridworld(tk.Tk):
         self.main_frame.board.fill_space_value(values)
 
         # Redrawing basic elements on board that were deleted by the value colors
-        self.main_frame.board.draw_basic_elements(self.walls, self.rewards)
+        # We don't want to draw rewards related to step cost
+        true_rewards = {key:val for key,val in self.rewards.items() if key in self.terminal}
+        self.main_frame.board.draw_basic_elements(self.walls, true_rewards)
 
         # Drawing the policy as arrows in the board
         if policy is not None:
             self.main_frame.board.draw_actions(policy)
 
-def standard_grid(rows=3, cols=4, windy=False, probabilities=None, step_cost=0):
+def standard_grid(rows=3, cols=4, windy=False, probabilities=None, step_cost=0, wind_dir="R", wind_strength=0.1):
     # Creating gridworld instance
     g = Gridworld(rows,cols)
 
@@ -250,7 +253,7 @@ def standard_grid(rows=3, cols=4, windy=False, probabilities=None, step_cost=0):
 
     # Reassigning probabilities
     if reset_probs:
-        random_probs = generate_windy_probabilities(g)
+        random_probs = generate_windy_probabilities(g, wind_dir=wind_dir, wind_strenght=wind_strength)
         g.setup(start_position, walls, rewards, random_probs, terminals, step_cost)
 
     # Setting fixed size for the board
@@ -259,7 +262,7 @@ def standard_grid(rows=3, cols=4, windy=False, probabilities=None, step_cost=0):
     # Return the gridworld object
     return g
 
-def generate_windy_probabilities(gridworld, wind_dir="R", wind_strenght=0.1):
+def generate_windy_probabilities(gridworld, wind_dir, wind_strenght):
     # Probabilities dictionary structure
     # {(state, action):{next_state:probability}}
     # key = (s,a)
@@ -273,27 +276,25 @@ def generate_windy_probabilities(gridworld, wind_dir="R", wind_strenght=0.1):
         # Defining probabilities for all actions in the current state
         all_actions = gridworld.get_actions(state)
 
-        # Defining probabilities for all posible states to land given the current state and the current action
-        next_possible_states = [gridworld.get_next_state(state,action) for action in all_actions]
-
         for action in all_actions:
             probs[state, action] = dict()
 
-            # Accumulating probabilities for normalization later on
-            total_probability = 0
-            for next_state in next_possible_states:
-                # Defining the actual probability
-                raw_probability = np.random.randint(0,11)
-                probs[state,action][next_state] = raw_probability
+            # If we are going up, then take the risk to move the wind direction, only if it's an allowed move
+            if action == "U" and wind_dir in all_actions:
+                # Wind strength cannot be greater than 1
+                wind_strenght = min(wind_strenght, 1)
 
-                # Adding probability to the total sum
-                total_probability += raw_probability
+                # Probability to go in the wind direction will be at most 0.75
+                wind_prob = wind_strenght*0.75
+                action_prob = 1-wind_prob
 
-            # Afterwards, divide every probability over the total probablity
-            # This way probability for all next states will add up to 1
-            for next_state in next_possible_states:
-                probs[state,action][next_state] /= total_probability
+                # Assigning the computed probabilities
+                probs[state, action][gridworld.get_next_state(state, action)] = action_prob
+                probs[state, action][gridworld.get_next_state(state, wind_dir)] = wind_prob
 
+            else:
+                probs[state, action][gridworld.get_next_state(state, action)] = 1
+                
     return probs
 
 if __name__ == "__main__":

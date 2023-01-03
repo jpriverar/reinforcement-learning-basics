@@ -63,8 +63,8 @@ class Board(tk.Canvas):
                 offset2 = (self.square_size//2, -self.square_size//4)
 
             elif action == "D":
-                offset1 = (self.square_size//2, -self.square_size//4)
-                offset2 = (self.square_size//2, +self.square_size//4)
+                offset1 = (self.square_size//2, 3*self.square_size//4)
+                offset2 = (self.square_size//2, 5*self.square_size//4)
 
             elif action == "R":
                 offset1 = (3*self.square_size//4, self.square_size//2)
