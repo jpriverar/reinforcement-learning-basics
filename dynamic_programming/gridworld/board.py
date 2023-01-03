@@ -16,6 +16,14 @@ class Board(tk.Canvas):
         self.cols = cols
 
     def init(self, start_position, walls, rewards):
+        # Coloring all the square and lines elements
+        self.draw_basic_elements(walls, rewards)
+
+        # Drawing the game agent
+        y, x = start_position
+        self.agent = self.create_bitmap(x*self.square_size+self.square_size//2, y*self.square_size+self.square_size//2, bitmap="@D:/Udemy/Reinforement Learning/dynamic_programming/gridworld/assets/agent.xbm")
+
+    def draw_basic_elements(self, walls, rewards):
         # Coloring the board walls
         for (y,x) in walls:
             point1 = (x*self.square_size, y*self.square_size)
@@ -47,10 +55,33 @@ class Board(tk.Canvas):
             y_coord = i*self.square_size
             self.create_line(0, y_coord, self.winfo_width(), y_coord, width=2)
 
-        # Drawing the game agent
-        y, x = start_position
-        self.agent = self.create_bitmap(x*self.square_size+self.square_size//2, y*self.square_size+self.square_size//2, bitmap="@D:/Udemy/Reinforement Learning/dynamic_programming/gridworld/assets/agent.xbm")
+    def draw_actions(self, actions):
+        for (y,x), action in actions.items():
+            # Calculating the offset for the direction of the action arrow
+            if action == "U":
+                offset1 = (self.square_size//2, self.square_size//4)
+                offset2 = (self.square_size//2, -self.square_size//4)
 
+            elif action == "D":
+                offset1 = (self.square_size//2, -self.square_size//4)
+                offset2 = (self.square_size//2, +self.square_size//4)
+
+            elif action == "R":
+                offset1 = (3*self.square_size//4, self.square_size//2)
+                offset2 = (5*self.square_size//4, self.square_size//2)
+
+            elif action == "L":
+                offset1 = (self.square_size//4, self.square_size//2)
+                offset2 = (-self.square_size//4, self.square_size//2)
+
+            # Getting starting and final points for the arrow
+            base = (x*self.square_size, y*self.square_size)
+            point1 = (base[0]+offset1[0], base[1]+offset1[1])
+            point2 = (base[0]+offset2[0], base[1]+offset2[1])
+
+            # Drawing the arrow itself
+            self.create_line(point1, point2, arrow=tk.LAST)
+    
     def move_agent(self, state):
         y, x = state
         self.coords(self.agent, x*self.square_size+self.square_size//2, y*self.square_size+self.square_size//2)
@@ -61,13 +92,19 @@ class Board(tk.Canvas):
             point2 = ((j+1)*self.square_size, (i+1)*self.square_size)
 
             # Creating the color in hexadecimal
-            r = hex(int(value*255)) if (value < 0) else hex(0)
-            g = hex(int(value*255)) if (value >= 0) else hex(0)
-            b = hex(0)
-            self.create_rectangle(point1, point2, fill=format_color_space(r,g,b))
+            # If the value is equal to zero then add a bit to every square so it's not completely black
+            if value == 0:
+                hex_color = "#202020"
+            else:
+                r = hex(int(value*255)) if (value < 0) else hex(0)
+                g = hex(int(value*255)) if (value >= 0) else hex(0)
+                b = hex(0)
+                hex_color = format_color_space(r,g,b)
+
+            self.create_rectangle(point1, point2, fill=hex_color)
 
             # Putting the reward in text inside the square
-            self.create_text((point1[0]+point2[0])/2, (point1[1]+point2[1])/2, text=str(value))
+            self.create_text((point1[0]+point2[0])/2, (point1[1]+point2[1])/2, text=f'{value:.4f}')
 
 def format_color_space(r,g,b):
     r = r.split("x")[1] + "0"

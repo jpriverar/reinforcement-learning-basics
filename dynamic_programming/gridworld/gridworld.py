@@ -116,7 +116,7 @@ class Gridworld(tk.Tk):
 
     def move(self, action):
         # Save the current state to be able to go back if needed
-        self.last_move.append(self.current_state)
+        self.last_move.append(self.current_state())
 
         # Performs a move of the agent and updates it in canvas
         # Checking first of all it's a valid action
@@ -157,6 +157,7 @@ class Gridworld(tk.Tk):
 
         # Removing the last saved moved, for it has been undone
         last_state = self.last_move.pop()
+        print(last_state)
 
         # Moving the agent to the previous state
         self.set_state(last_state)
@@ -188,7 +189,8 @@ class Gridworld(tk.Tk):
     def reset(self):
         self.set_state(self.start)
         self.last_move = []
-        self.update_frame()
+        self.main_frame.board.delete("all")
+        self.main_frame.board.init(self.start, self.walls, self.rewards)
 
     def get_all_states(self):
         states = []
@@ -200,9 +202,16 @@ class Gridworld(tk.Tk):
 
         return states
 
-    def show_values_on_board(self, value_s):
+    def show_values_on_board(self, value_s, policy=None):
         values = {key:val[-1] for key, val in value_s.items() if key not in self.terminal}
         self.main_frame.board.fill_space_value(values)
+
+        # Redrawing basic elements on board that were deleted by the value colors
+        self.main_frame.board.draw_basic_elements(self.walls, self.rewards)
+
+        # Drawing the policy as arrows in the board
+        if policy is not None:
+            self.main_frame.board.draw_actions(policy)
 
 def standard_grid(windy=False, probabilities=None):
     # Creating gridworld instance
