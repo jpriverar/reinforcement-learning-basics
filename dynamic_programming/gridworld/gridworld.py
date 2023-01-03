@@ -22,7 +22,7 @@ class Gridworld(tk.Tk):
         self.main_frame = MainFrame(self, rows, columns)
         self.main_frame.pack()
 
-    def setup(self, start_position, walls, rewards, probabilities, terminals):
+    def setup(self, start_position, walls, rewards, probabilities, terminals, step_cost=0):
         # Setup all game properties like rewards, obstacles and environment dynamics
         # Check the start_position is inside the game area
         if (0 <= start_position[1] < self.cols) and (0 <= start_position[0] < self.rows):
@@ -68,11 +68,18 @@ class Gridworld(tk.Tk):
         self.rewards = rewards
         self.probabilities = probabilities
         self.terminal = terminals
-        
+        self.step_cost = step_cost
+
         # Updating all widget information
         self.update()
         self.main_frame.controls.update_available_actions(self.get_actions(self.current_state()))
         self.main_frame.board.init(start_position, walls, rewards)
+
+        # Setting up the step cost as rewards for all the non declared reward states
+        for state in self.get_all_states():
+            # If state has not a declared reward, assign the step cost to it
+            if state not in self.rewards:
+                self.rewards[state] = self.step_cost
 
     def update_frame(self):
         # Update the available moves in the controls
@@ -213,9 +220,9 @@ class Gridworld(tk.Tk):
         if policy is not None:
             self.main_frame.board.draw_actions(policy)
 
-def standard_grid(windy=False, probabilities=None):
+def standard_grid(rows=3, cols=4, windy=False, probabilities=None, step_cost=0):
     # Creating gridworld instance
-    g = Gridworld(3,4)
+    g = Gridworld(rows,cols)
 
     # Defining game assets
     start_position = (2,0)
@@ -239,12 +246,12 @@ def standard_grid(windy=False, probabilities=None):
             reset_probs = True
 
     # Initializing the game characteristics
-    g.setup(start_position, walls, rewards, probabilities, terminals)
+    g.setup(start_position, walls, rewards, probabilities, terminals, step_cost)
 
     # Reassigning probabilities
     if reset_probs:
-        random_probs = generate_random_probabilities(g)
-        g.setup(start_position, walls, rewards, random_probs, terminals)
+        random_probs = generate_windy_probabilities(g)
+        g.setup(start_position, walls, rewards, random_probs, terminals, step_cost)
 
     # Setting fixed size for the board
     g.resizable(False, False)
@@ -252,7 +259,7 @@ def standard_grid(windy=False, probabilities=None):
     # Return the gridworld object
     return g
 
-def generate_random_probabilities(gridworld):
+def generate_windy_probabilities(gridworld, wind_dir="R", wind_strenght=0.1):
     # Probabilities dictionary structure
     # {(state, action):{next_state:probability}}
     # key = (s,a)

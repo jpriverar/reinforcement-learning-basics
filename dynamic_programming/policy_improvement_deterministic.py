@@ -158,7 +158,6 @@ class PolicyImprovement(threading.Thread):
                 print("Optimal value function achieved...")
                 break
 
-        
 
 # Creating a standard grid object
 g = standard_grid()
@@ -169,21 +168,3 @@ policy_improver.start()
 
 # Starting the game mainloop
 g.mainloop()
-
-'''
-# After game is over, print and plot useful information
-print(f"Required steps before convergence: {evaluate_policy.steps}")
-
-for state, values_in_time in evaluate_policy.value_s.items():
-    try:
-        plt.plot(np.arange(evaluate_policy.steps+1), values_in_time, label=str(state))
-    except Exception as e:
-        print("Not plotting terminal state, for its value does not change")
-
-plt.title("V(s) variation in time")
-plt.xlabel("Step")
-plt.ylabel("V(s)")
-plt.grid()
-plt.legend()
-plt.show()
-'''
