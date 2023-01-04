@@ -21,7 +21,7 @@ class Board(tk.Canvas):
 
         # Drawing the game agent
         y, x = start_position
-        self.agent = self.create_bitmap(x*self.square_size+self.square_size//2, y*self.square_size+self.square_size//2, bitmap="@D:/Udemy/Reinforement Learning/dynamic_programming/gridworld/assets/agent.xbm")
+        self.agent = self.create_bitmap(x*self.square_size+self.square_size//2, y*self.square_size+self.square_size//2, bitmap="@D:/Udemy/Reinforement Learning/gridworld/assets/agent.xbm")
 
     def draw_basic_elements(self, walls, rewards):
         # Coloring the board walls

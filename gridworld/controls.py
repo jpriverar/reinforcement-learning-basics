@@ -9,13 +9,13 @@ class Controls(tk.Frame):
 
         # Creating the control buttons to play
         # Movement buttons
-        self.left_button = tk.Button(self, text="<-", cursor="hand2",command=lambda:self.parent.parent.move("L"), bitmap="@D:/Udemy/Reinforement Learning/dynamic_programming/gridworld/assets/left_arrow.xbm")
-        self.right_button = tk.Button(self, text="->", cursor="hand2", command=lambda:self.parent.parent.move("R"), bitmap="@D:/Udemy/Reinforement Learning/dynamic_programming/gridworld/assets/right_arrow.xbm")
-        self.up_button = tk.Button(self, text="UP", cursor="hand2", command=lambda:self.parent.parent.move("U"), bitmap="@D:/Udemy/Reinforement Learning/dynamic_programming/gridworld/assets/up_arrow.xbm")
-        self.down_button = tk.Button(self, text="DOWN", cursor="hand2", command=lambda:self.parent.parent.move("D"), bitmap="@D:/Udemy/Reinforement Learning/dynamic_programming/gridworld/assets/down_arrow.xbm")
+        self.left_button = tk.Button(self, text="<-", cursor="hand2",command=lambda:self.parent.parent.move("L"), bitmap="@D:/Udemy/Reinforement Learning/gridworld/assets/left_arrow.xbm")
+        self.right_button = tk.Button(self, text="->", cursor="hand2", command=lambda:self.parent.parent.move("R"), bitmap="@D:/Udemy/Reinforement Learning/gridworld/assets/right_arrow.xbm")
+        self.up_button = tk.Button(self, text="UP", cursor="hand2", command=lambda:self.parent.parent.move("U"), bitmap="@D:/Udemy/Reinforement Learning/gridworld/assets/up_arrow.xbm")
+        self.down_button = tk.Button(self, text="DOWN", cursor="hand2", command=lambda:self.parent.parent.move("D"), bitmap="@D:/Udemy/Reinforement Learning/gridworld/assets/down_arrow.xbm")
 
         # Undo and reset buttons
-        self.undo_button = tk.Button(self, text="UNDO", cursor="hand2", command=lambda:self.parent.parent.undo_move(), bitmap="@D:/Udemy/Reinforement Learning/dynamic_programming/gridworld/assets/undo_arrow.xbm")
+        self.undo_button = tk.Button(self, text="UNDO", cursor="hand2", command=lambda:self.parent.parent.undo_move(), bitmap="@D:/Udemy/Reinforement Learning/gridworld/assets/undo_arrow.xbm")
         self.reset_button = tk.Button(self, text="RESET", cursor="hand2", command=lambda:self.parent.parent.reset())
 
         # Packing the buttons into the frame

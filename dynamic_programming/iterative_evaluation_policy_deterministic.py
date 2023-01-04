@@ -1,5 +1,5 @@
-import os 
 import sys
+sys.path.append("..")
 import time
 import threading
 import numpy as np
