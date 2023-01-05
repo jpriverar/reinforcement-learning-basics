@@ -196,9 +196,11 @@ class Gridworld(tk.Tk):
 
     def reset(self):
         self.set_state(self.start)
+        self.update_frame()
         self.last_move = []
         self.main_frame.board.delete("all")
-        self.main_frame.board.init(self.start, self.walls, self.rewards)
+        true_rewards = {key:val for key,val in self.rewards.items() if key in self.terminal}
+        self.main_frame.board.init(self.start, self.walls, true_rewards)
 
     def get_all_states(self):
         states = []
@@ -211,7 +213,7 @@ class Gridworld(tk.Tk):
         return states
 
     def show_values_on_board(self, value_s, policy=None):
-        values = {key:val[-1] for key, val in value_s.items() if key not in self.terminal}
+        values = {key:val for key, val in value_s.items() if key not in self.terminal}
         self.main_frame.board.fill_space_value(values)
 
         # Redrawing basic elements on board that were deleted by the value colors

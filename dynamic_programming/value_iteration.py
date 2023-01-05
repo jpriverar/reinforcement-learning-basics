@@ -1,8 +1,10 @@
+import sys
+sys.path.append("..")
 import time
 import threading
 import numpy as np
 import matplotlib.pyplot as plt
-from ..gridworld.gridworld import standard_grid
+from gridworld.gridworld import standard_grid
 
 class ValueIterator(threading.Thread):
     def __init__(self, environment, daemon=False):
