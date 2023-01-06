@@ -94,7 +94,7 @@ class Gridworld(tk.Tk):
         actions = []
 
         # If we are in terminal state, game is over, no actions available
-        if self.game_over(): return actions
+        if self.is_terminal(state): return actions
 
         # Checking to the left
         if state[1] > 0 and (state[0], state[1]-1) not in self.walls:
@@ -141,12 +141,12 @@ class Gridworld(tk.Tk):
             else:
                 # Then getting the next state based on the defined probabilities
                 # p(s'|s,a)
-                next_state_probs = self.probabilities[self.current_state, action]
-                next_states = next_state_probs.keys()
-                next_probs = next_state_probs.values()
+                next_state_probs = self.probabilities[self.current_state(), action]
+                next_states = list(next_state_probs.keys())
+                next_probs = list(next_state_probs.values())
 
                 # Choosing the actual next state
-                next_state = np.random.choice(next_states, p=next_probs)
+                next_state = next_states[np.random.choice(len(next_states), p=next_probs)]
 
                 # Setting the agent state to the chosen state
                 self.set_state(next_state)

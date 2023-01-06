@@ -145,9 +145,10 @@ class MonteCarloEvaluation(threading.Thread):
 # Creating a standard grid object
 g = standard_grid()
 
-# Starting algorithm program in a separate thread
-value_iteration = MonteCarloEvaluation(g, daemon=True)
-value_iteration.start()
+# Starting
+#  algorithm program in a separate thread
+policy_evaluation = MonteCarloEvaluation(g, daemon=True)
+policy_evaluation.start()
 
 # Starting the game mainloop
 g.mainloop()
