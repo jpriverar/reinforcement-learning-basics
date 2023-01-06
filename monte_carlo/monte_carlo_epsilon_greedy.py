@@ -25,6 +25,7 @@ class MonteCarloExploringStarts(threading.Thread):
         # To store the steps required before convergence
         self.steps = 0
         
+        # Creating a uniformly distributed probabilistic policy
         # Creating a policy selecting available actions at random
         self.policy = dict()
         for state in all_states:
@@ -34,22 +35,15 @@ class MonteCarloExploringStarts(threading.Thread):
             actions = self.g.get_actions(state)
             self.policy[state] = np.random.choice(actions)
 
-    def play_game(self, max_steps):
-        # Getting all playable states
-        all_states = [state for state in self.g.get_all_states() if not self.g.is_terminal(state)]
-
+    def play_game(self, max_steps, epsilon):
         # Initializing the number of steps performed
         steps = 0
 
         # Play the game until it's over or until we reach maximum number of steps
-        # Set the agent in a random starting position
-        random_state = all_states[np.random.choice(len(all_states))]
-        self.g.set_state(random_state)
         curr_state = self.g.current_state()
 
         # Starting with a random action for the starting state
-        action = np.random.choice(self.g.get_actions(curr_state))
-
+        action = self.get_epsilong_greedy_action(curr_state, epsilon)
         # To save the states we have visited so far (first visit Monte Carlo), and their respective action and reward
         visited_states = [curr_state]
         performed_actions = [action]
@@ -67,7 +61,7 @@ class MonteCarloExploringStarts(threading.Thread):
             rewards.append(reward)
 
             # Getting the action to play according to the agent's policy and saving it
-            action = self.policy.get(curr_state, None)
+            action = self.get_epsilong_greedy_action(curr_state, epsilon)
             performed_actions.append(action)
 
             # Add one step taken to the counter
@@ -75,7 +69,23 @@ class MonteCarloExploringStarts(threading.Thread):
 
         return visited_states, performed_actions, rewards
 
-    def estimate_action_values(self, discount_factor=0.9, delta_threshold=0.001, max_steps=20, max_episodes=100):
+    def get_epsilong_greedy_action(self, state, epsilon):
+        # If it's a terminal state
+        if self.g.is_terminal(state): return None
+
+        # Possible actions for the state
+        actions = self.g.get_actions(state)
+
+        # Exploration
+        if np.random.random() < epsilon:
+            action = np.random.choice(actions)
+        # Exploitation
+        else:
+            action = self.policy[state] 
+
+        return action
+
+    def estimate_action_values(self, discount_factor=0.9, delta_threshold=0.001, max_steps=20, max_episodes=100, epsilon=0.1):
         # Getting all non terminal states
         all_states = [state for state in self.g.get_all_states() if not self.g.is_terminal(state)]
 
@@ -85,14 +95,14 @@ class MonteCarloExploringStarts(threading.Thread):
         # Countin the episodes played before convergence
         episodes = 0
 
-        # Loop for 100 episodes(until convergence)
+        # Loop for max_episodes episodes (or until convergence)
         while episodes < max_episodes:
             # Counting the starting episode
             episodes += 1
 
             # Playing the game with the current policy
             print(f"Starting episode {episodes}")
-            visited_states, performed_actions, rewards = self.play_game(max_steps=max_steps)
+            visited_states, performed_actions, rewards = self.play_game(max_steps=max_steps, epsilon=epsilon)
             print(f"Episode {episodes} finished")
             # Once the game is over, compute the action value function with the sample mean
             # Starting action value estimation, since last estate must be terminal state
@@ -100,7 +110,6 @@ class MonteCarloExploringStarts(threading.Thread):
 
             # Going backwards through the visited states except the last state
             for time_step, (state, action) in reversed(list(enumerate(zip(visited_states[:-1], performed_actions[:-1])))):
-                print("Updating Q values")
                 G = rewards[time_step+1] + discount_factor*G
 
                 # For first visit Monte Carlo, check if we have been in this state and performed this action before
@@ -117,7 +126,7 @@ class MonteCarloExploringStarts(threading.Thread):
                     # Saving the new mean action value
                     self.value_q[state, action] = new_mean
 
-                    # Updating the policy for the action with the best sample mean so far
+                    # Getting the best action known so far by the samples
                     all_actions = self.g.get_actions(state)
                     action_values = [self.value_q[state, a] for a in all_actions]
                     self.policy[state] = all_actions[np.argmax(action_values)]
@@ -125,20 +134,24 @@ class MonteCarloExploringStarts(threading.Thread):
             # Restart the game to keep playing and collecting samples
             self.g.reset()  
 
-
     # Main function runinng the algorithm -> To improve the policy
     def run_algorithm(self):
         # Wait a moment for the gridworld instance to start
-        time.sleep(3)
+        time.sleep(1)
 
         # Defining a delta threshold and a discount factor
         discount_factor = 0.9
         delta_threshold = 0.001
-        episodes = 1000
+
+        # Maximum number of episodes to play
+        episodes = 100
+
+        # Epsilon - percentage of exploration vs explotation
+        epsilon = 0.9
 
         # Compute optimal value function until convergence
         # Calculating the value function for the current policy
-        self.estimate_action_values(discount_factor=discount_factor, delta_threshold=delta_threshold, max_episodes=episodes)
+        self.estimate_action_values(discount_factor=discount_factor, delta_threshold=delta_threshold, max_episodes=episodes, epsilon=epsilon)
             
         # Show the initial computed final values on the gridboard
         # Getting the V(s) values from the computed Q(s,a)
@@ -155,7 +168,7 @@ class MonteCarloExploringStarts(threading.Thread):
         self.g.show_values_on_board(value_s, self.policy)
 
 # Creating a standard grid object
-g = standard_grid(windy=True, probabilities="Auto", wind_strength=1, step_cost=-0.1)
+g = standard_grid()
 
 # Starting algorithm program in a separate thread
 policy_improvement = MonteCarloExploringStarts(g, daemon=True)
