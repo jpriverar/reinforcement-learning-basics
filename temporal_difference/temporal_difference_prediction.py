@@ -66,9 +66,6 @@ class TemporalDifferencePrediction(threading.Thread):
                 new_v = old_v + alpha*(reward + gamma*self.value_s[next_state] - old_v)
                 self.value_s[curr_state] = new_v
 
-                # Updating the biggest change
-                delta = max(delta, np.abs(new_v - old_v))
-
                 # Add one step taken to the counter and shifting states
                 curr_state = next_state
                 steps += 1

@@ -213,7 +213,7 @@ class Gridworld(tk.Tk):
         return states
 
     def show_values_on_board(self, value_s, policy=None):
-        values = {key:val for key, val in value_s.items() if key not in self.terminal}
+        values = {key:val for key, val in value_s.items() if key not in self.terminal and key not in self.walls}
         self.main_frame.board.fill_space_value(values)
 
         # Redrawing basic elements on board that were deleted by the value colors
