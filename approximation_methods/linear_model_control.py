@@ -26,13 +26,20 @@ class Model:
         x = self.featurizer.transform([state])[0]
         return x
 
-class TemporalDifferencePrediction(threading.Thread):
+class TemporalDifferenceControl(threading.Thread):
     def __init__(self, environment, daemon=False):
         # Initializing the thread instance
         super().__init__(target=self.run_algorithm, daemon=daemon)
 
         # Store the environment to interact and perform actions
         self.g = environment
+
+        # Action encoding variable
+        self.action_ref = {"U":(1,0,0,0),
+                           "D":(0,1,0,0),
+                           "L":(0,0,1,0),
+                           "R":(0,0,0,1),
+                           "N":(0,0,0,0)}
         
         # Creating a policy selecting available actions at random
         all_states = self.g.get_all_states()
@@ -43,6 +50,21 @@ class TemporalDifferencePrediction(threading.Thread):
 
             actions = self.g.get_actions(state)
             self.policy[state] = np.random.choice(actions)
+
+    def encode(self, state, action):
+        encoded_action = self.action_ref[action]
+        return state + encoded_action
+
+    def get_best_action_value(self, state):
+        # If we are in terminal state, just return the value
+        if self.g.is_terminal(state):
+            return "N", self.model.predict(self.encode(state, "N"))
+
+        # TGetting the action value for every possible action
+        all_actions = self.g.get_actions(state)
+        action_values = [self.model.predict(self.encode(state, action)) for action in all_actions]
+
+        return all_actions[np.argmax(action_values)], max(action_values)
 
     def estimate_value_function(self, gamma, delta_threshold, alpha, max_steps, min_episodes, max_episodes, epsilon):
         # Initializing number of episodes played
@@ -73,18 +95,21 @@ class TemporalDifferencePrediction(threading.Thread):
                 next_state = self.g.current_state()
 
                 # Transforming both states
-                transformed_curr = self.model.predict(curr_state)
-                transformed_next = self.model.predict(next_state)
+                Qsa = self.model.predict(self.encode(curr_state, curr_action))
+                Qsa2 = self.get_best_action_value(next_state)[1]
 
                 # Getting the return of the current state
                 if self.g.is_terminal(next_state):
                     y = reward
                 else:
-                    y = reward + gamma*transformed_next
+                    y = reward + gamma*Qsa2
 
                 # Updating the weights of the approximation model (gradient ascent)
                 # w = w + alpha * (y - gamma*w*similarity(s)) * similarity(s)
-                self.model.w += alpha*(y - transformed_curr)*self.model.grad(curr_state)
+                self.model.w += alpha*(y - Qsa)*self.model.grad(self.encode(curr_state, curr_action))
+
+                # Updating the policy to the best known action so far
+                self.policy[curr_state] = self.get_best_action_value(curr_state)[0]
 
                 # Shifting states and actions
                 curr_state = next_state
@@ -94,7 +119,7 @@ class TemporalDifferencePrediction(threading.Thread):
 
     def get_epsilong_greedy_action(self, state, epsilon):
         # Check if not terminal state
-        if self.g.is_terminal(state): return None
+        if self.g.is_terminal(state): return "N"
 
         # Possible actions for the state
         actions = self.g.get_actions(state)
@@ -115,20 +140,23 @@ class TemporalDifferencePrediction(threading.Thread):
 
         # Collecting samples during the defined number of episodes
         for i in range(num_episodes):
-            # We get the starting state we are in and save it
-            curr_state = self.g.current_state()
-            samples.append(curr_state)
-
             while not self.g.game_over():
-                # Move a random action and get the reward
-                action = np.random.choice(self.g.get_actions(curr_state))
-                reward = self.g.move(action)
-
-                # We get the next state and save it as the current state
+                # We get the state and save it
                 curr_state = self.g.current_state()
-                samples.append(curr_state)
+
+                # Choose a random action to do
+                action = np.random.choice(self.g.get_actions(curr_state))
+
+                # Encode the action and concatenate it to the state
+                encoded_state_action = self.encode(curr_state, action)
+                samples.append(encoded_state_action)
+
+                # Performed the selected action and get the reward
+                reward = self.g.move(action)
             
             # If game is over then reset to keep playing
+            encoded_state_action = self.encode(self.g.current_state(), "N")
+            samples.append(encoded_state_action)
             self.g.reset()
         
         return samples
@@ -139,7 +167,7 @@ class TemporalDifferencePrediction(threading.Thread):
         time.sleep(1)
 
         # Collecting samples from the environment to initialize our model's RBF kernel
-        samples = self.gather_samples(100)
+        samples = self.gather_samples(250)
         
         # Initialize our linear model
         print("Samples collected, training RBF Sampler...")
@@ -169,16 +197,18 @@ class TemporalDifferencePrediction(threading.Thread):
         value_s = dict()
         for state in self.g.get_all_states():
             if not self.g.is_terminal(state):
-                value_s[state] = self.model.predict(state)
+                all_actions = self.g.get_actions(state)
+                for action in all_actions:
+                    if action == self.policy[state]: value_s[state] = self.model.predict(self.encode(state, action))
 
         self.g.show_values_on_board(value_s, self.policy)
 
 # Creating a standard grid object
-g = standard_grid()
+g = standard_grid(step_cost=-0.1)
 
 # Starting
 #  algorithm program in a separate thread
-temp_diff_pred = TemporalDifferencePrediction(g, daemon=True)
+temp_diff_pred = TemporalDifferenceControl(g, daemon=True)
 temp_diff_pred.start()
 
 # Starting the game mainloop
