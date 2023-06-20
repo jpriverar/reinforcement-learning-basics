@@ -135,7 +135,7 @@ if __name__ == "__main__":
     learning_rate = 0.1
     discount_factor = 0.99
     epsilon = 0.5
-    rewards = learn_to_play(10000, discount_factor, learning_rate, epsilon)
+    rewards = learn_to_play(1000, discount_factor, learning_rate, epsilon)
 
     # After training close the game
     env.close()

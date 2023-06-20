@@ -60,7 +60,7 @@ class TemporalDifferenceControl(threading.Thread):
         if self.g.is_terminal(state):
             return "N", self.model.predict(self.encode(state, "N"))
 
-        # TGetting the action value for every possible action
+        # Getting the action value for every possible action
         all_actions = self.g.get_actions(state)
         action_values = [self.model.predict(self.encode(state, action)) for action in all_actions]
 
